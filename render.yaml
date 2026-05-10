@@ -1,0 +1,14 @@
+# Ejemplo para Render Blueprint (ajusta el nombre del servicio).
+# SQLite en disco gratuito puede no persistir entre reinicios; considera PostgreSQL en producción.
+
+services:
+  - type: web
+    name: abastecimiento-admin-api
+    rootDir: backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
