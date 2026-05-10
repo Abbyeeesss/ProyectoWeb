@@ -2,7 +2,7 @@ import * as proveedorModel from "../models/proveedorModel.js";
 import * as ubicacionModel from "../models/ubicacionModel.js";
 import { validarDocumentoIdentidad, validarRucProveedor } from "../validators/sensible.js";
 
-function validarCuerpoProveedor(body) {
+async function validarCuerpoProveedor(body) {
   const errores = [];
   const nombre_comercial = body.nombre_comercial?.trim();
   const ruc = body.ruc?.trim();
@@ -19,7 +19,7 @@ function validarCuerpoProveedor(body) {
   const vd = validarDocumentoIdentidad(documento_identidad);
   if (!vd.ok) errores.push(`Documento del representante: ${vd.mensaje}`);
 
-  if (!ciudad_id || !ubicacionModel.existeCiudad(ciudad_id)) {
+  if (!ciudad_id || !(await ubicacionModel.existeCiudad(ciudad_id))) {
     errores.push("ciudad_id debe referenciar una ciudad existente (use los desplegables).");
   }
 
@@ -39,58 +39,58 @@ function validarCuerpoProveedor(body) {
   };
 }
 
-export function list(req, res) {
-  res.json(proveedorModel.listarProveedores());
+export async function list(req, res) {
+  res.json(await proveedorModel.listarProveedores());
 }
 
-export function getOne(req, res) {
+export async function getOne(req, res) {
   const id = Number(req.params.id);
-  const row = proveedorModel.obtenerProveedor(id);
+  const row = await proveedorModel.obtenerProveedor(id);
   if (!row) return res.status(404).json({ error: "Proveedor no encontrado." });
   res.json(row);
 }
 
-export function create(req, res) {
+export async function create(req, res) {
   try {
-    const v = validarCuerpoProveedor(req.body);
+    const v = await validarCuerpoProveedor(req.body);
     if (!v.ok) return res.status(400).json({ error: v.errores.join(" ") });
-    const row = proveedorModel.crearProveedor(v.data);
+    const row = await proveedorModel.crearProveedor(v.data);
     res.status(201).json(row);
   } catch (e) {
-    if (e.code === "SQLITE_CONSTRAINT_UNIQUE") {
+    if (e.code === "23505") {
       return res.status(409).json({ error: "Ya existe un proveedor con ese RUC." });
     }
     throw e;
   }
 }
 
-export function update(req, res) {
+export async function update(req, res) {
   try {
     const id = Number(req.params.id);
-    if (!proveedorModel.existeProveedor(id)) {
+    if (!(await proveedorModel.existeProveedor(id))) {
       return res.status(404).json({ error: "Proveedor no encontrado." });
     }
-    const v = validarCuerpoProveedor(req.body);
+    const v = await validarCuerpoProveedor(req.body);
     if (!v.ok) return res.status(400).json({ error: v.errores.join(" ") });
-    res.json(proveedorModel.actualizarProveedor(id, v.data));
+    res.json(await proveedorModel.actualizarProveedor(id, v.data));
   } catch (e) {
-    if (e.code === "SQLITE_CONSTRAINT_UNIQUE") {
+    if (e.code === "23505") {
       return res.status(409).json({ error: "Ya existe un proveedor con ese RUC." });
     }
     throw e;
   }
 }
 
-export function remove(req, res) {
+export async function remove(req, res) {
   const id = Number(req.params.id);
-  if (!proveedorModel.existeProveedor(id)) {
+  if (!(await proveedorModel.existeProveedor(id))) {
     return res.status(404).json({ error: "Proveedor no encontrado." });
   }
   try {
-    proveedorModel.eliminarProveedor(id);
+    await proveedorModel.eliminarProveedor(id);
     res.status(204).send();
   } catch (e) {
-    if (e.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+    if (e.code === "23503") {
       return res.status(409).json({
         error: "No se puede eliminar: hay productos asociados a este proveedor.",
       });

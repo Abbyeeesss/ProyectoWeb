@@ -1,5 +1,4 @@
-# Ejemplo para Render Blueprint (ajusta el nombre del servicio).
-# SQLite en disco gratuito puede no persistir entre reinicios; considera PostgreSQL en producción.
+# Ejemplo Render Blueprint — defina DATABASE_URL (secreto) en el dashboard con la URI de Supabase.
 
 services:
   - type: web
@@ -12,3 +11,5 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
+      # - key: DATABASE_URL
+      #   sync: false   # valor desde Dashboard → Environment (Supabase URI)

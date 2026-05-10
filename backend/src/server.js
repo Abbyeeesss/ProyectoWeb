@@ -1,17 +1,17 @@
 import express from "express";
 import cors from "cors";
 import { PORT } from "./config.js";
-import { initSchema } from "./db/database.js";
+import { initSchema } from "./db/initSchema.js";
 import apiRoutes from "./routes/index.js";
 
-initSchema();
+await initSchema();
 
 const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
 app.get("/health", (req, res) => {
-  res.json({ ok: true, service: "abastecimiento-admin-api" });
+  res.json({ ok: true, service: "abastecimiento-admin-api", db: "postgresql" });
 });
 
 app.use("/api", apiRoutes);

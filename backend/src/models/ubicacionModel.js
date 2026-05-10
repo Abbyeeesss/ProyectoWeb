@@ -1,22 +1,27 @@
-import db from "../db/database.js";
+import pool from "../db/pool.js";
 
-export function listarPaises() {
-  return db.prepare("SELECT id, nombre FROM pais ORDER BY nombre").all();
+export async function listarPaises() {
+  const r = await pool.query("SELECT id, nombre FROM pais ORDER BY nombre");
+  return r.rows;
 }
 
-export function listarProvinciasPorPais(paisId) {
-  return db
-    .prepare("SELECT id, nombre FROM provincia WHERE pais_id = ? ORDER BY nombre")
-    .all(paisId);
+export async function listarProvinciasPorPais(paisId) {
+  const r = await pool.query(
+    "SELECT id, nombre FROM provincia WHERE pais_id = $1 ORDER BY nombre",
+    [paisId]
+  );
+  return r.rows;
 }
 
-export function listarCiudadesPorProvincia(provinciaId) {
-  return db
-    .prepare("SELECT id, nombre FROM ciudad WHERE provincia_id = ? ORDER BY nombre")
-    .all(provinciaId);
+export async function listarCiudadesPorProvincia(provinciaId) {
+  const r = await pool.query(
+    "SELECT id, nombre FROM ciudad WHERE provincia_id = $1 ORDER BY nombre",
+    [provinciaId]
+  );
+  return r.rows;
 }
 
-export function existeCiudad(id) {
-  const row = db.prepare("SELECT id FROM ciudad WHERE id = ?").get(id);
-  return Boolean(row);
+export async function existeCiudad(id) {
+  const r = await pool.query("SELECT id FROM ciudad WHERE id = $1", [id]);
+  return r.rowCount > 0;
 }
