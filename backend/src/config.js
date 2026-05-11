@@ -14,7 +14,7 @@ export const SUPABASE_KEY = (
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error(
-    "[config] Faltan SUPABASE_URL y/o SUPABASE_KEY en backend/.env (clave service_role de Supabase; solo servidor)."
+    "[config] Faltan SUPABASE_URL y/o SUPABASE_KEY. En desarrollo: backend/.env. En Render/u otros hosts: Environment Variables del servicio (mismo nombre de variable)."
   );
   process.exit(1);
 }
