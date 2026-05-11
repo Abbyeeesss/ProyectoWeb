@@ -1,43 +1,42 @@
-# Administración — Sistema de abastecimiento minorista
+# Sistema de abastecimiento minorista — Panel de administración
 
-Proyecto académico alineado a la **especificación funcional** del core de pedidos optimizados (ventas, inventario, proveedores, agrupación por proveedor/categoría y datos como **lead time** y **productos perecederos**). Esta entrega cubre el **panel de administración** en **React** consumiendo una API **Node.js (Express)** con persistencia **PostgreSQL** vía **[Supabase](https://supabase.com/)** (u otro Postgres compatible).
+Cubre ventas, inventario, proveedores, lead time y productos perecederos.
 
-## Qué incluye este repositorio
+**Stack:** React + Vite en el front, Express en el back, Supabase como base de datos.
 
-| Capa | Tecnología | Rol |
-|------|------------|-----|
-| Front-end | React (Vite), React Router | Formularios de mantenimiento (MV* orientado a vistas + modelo en API) |
-| Back-end | Express, `pg`, dotenv | MVC: `models/` · `controllers/` · `routes/` |
+---
 
-### Requisitos de la consigna
+## Lo que hace este proyecto
 
-1. **Validación en back-end de un dato sensible**  
-   En proveedores, **`documento_identidad`** (cédula ecuatoriana, dígito verificador módulo 10) y **`ruc`** se validan **solo en servidor** antes de insertar/actualizar. Implementación: `backend/src/validators/sensible.js`, uso en `backend/src/controllers/proveedorController.js`.
+| Capa | Tecnología |
+|------|------------|
+| Front-end | React, Vite, React Router |
+| Back-end | Express, @supabase/supabase-js, dotenv |
+| Base de datos | PostgreSQL vía Supabase |
 
-2. **Claves foráneas sin input libre de IDs**  
-   - **Ubicación**: cascada **País → Provincia → Ciudad** (`UbicacionCascade.jsx` + endpoints `/api/paises`, `/api/provincias`, `/api/ciudades`).  
-   - **Productos**: **Proveedor** y **Categoría** solo mediante `<select>`; el servidor comprueba que los IDs existan (`productoController.js`).
+El back-end sigue estructura MVC con carpetas `models`, `controllers` y `routes`.
 
-3. **Versionamiento Git + README + deploy**  
-   Este README describe desarrollo local y deploy con variables de entorno (API + SPA).
+---
 
-## Conectar Supabase (obligatorio para la API)
+## Tres decisiones de diseño importantes
 
-1. Cree un proyecto en [Supabase](https://supabase.com/dashboard).
-2. Vaya a **Project Settings → Database**.
-3. En **Connection string**, elija **URI** y copie la cadena (incluye usuario y host). Reemplace `[YOUR-PASSWORD]` por la contraseña de la base que definió al crear el proyecto.
-4. En su máquina, dentro de `backend/`:
-   - Copie `backend/.env.example` como **`backend/.env`**.
-   - Pegue la línea:  
-     `DATABASE_URL=postgresql://...`  
-   - Para Node en servidor persistente suele funcionar bien la conexión **directa** (puerto **5432**). Si usa **pooler** (puerto **6543**), siga la documentación actual de Supabase para “transaction mode” vs “session mode”.
-5. TLS: la API activa SSL automáticamente cuando la URI **no** apunta a `localhost`.
+### 1. Validación de datos sensibles solo en el servidor
 
-La primera vez que arranca (`npm run dev` / `npm start`), la API ejecuta `CREATE TABLE IF NOT EXISTS` desde `backend/src/db/schema.sql`. También puede pegar ese SQL en **Supabase → SQL Editor** si prefiere crear tablas desde el panel.
+El campo `documento_identidad` (cédula ecuatoriana con dígito verificador módulo 10) se valida únicamente en el back-end, antes de cualquier inserción o actualización. El front nunca toca esa lógica.
 
-**Seguridad:** la URI contiene la contraseña de la base. Solo debe vivir en `backend/.env`, variables secretas del hosting (Render/Railway/VPS) y **nunca** en el repositorio ni en el front-end.
+Está implementado en `sensible.js` dentro de `validators`, y se usa desde `proveedorController.js`.
 
-## Estructura
+### 2. Claves foráneas sin escribir IDs a mano
+
+En lugar de pedir que el usuario ingrese un ID numérico, todo se resuelve con selectores. La ubicación funciona en cascada: primero se elige el país, luego la provincia, luego la ciudad. Para productos, el proveedor y la categoría también se seleccionan desde un `<select>`, y el servidor verifica que los IDs existan antes de guardar.
+
+### 3. Datos de prueba coherentes
+
+El seed incluye proveedores y productos con cédulas que pasan el validador del servidor, para que las pruebas locales funcionen sin ajustes.
+
+---
+
+## Estructura de carpetas
 
 ```
 backend/
@@ -47,10 +46,11 @@ backend/
     routes/
     validators/
     db/
-      schema.sql      # DDL Postgres (Supabase)
-      pool.js         # Pool pg
-      initSchema.js
-    scripts/seed.js
+      schema.sql
+      supabase.js
+    scripts/
+      seed.js
+
 frontend/
   src/
     pages/
@@ -58,28 +58,37 @@ frontend/
     api.js
 ```
 
+---
+
+## Configuración de Supabase
+
+1. Crear un proyecto en [supabase.com](https://supabase.com/dashboard).
+2. En el **SQL Editor**, ejecutar el contenido de `schema.sql` para crear las tablas.
+3. Ir a **Project Settings** y luego a **API**. Ahí se encuentran dos valores:
+   - **Project URL**, que va como `SUPABASE_URL`
+   - La clave **service_role**, que va como `SUPABASE_KEY`
+4. Dentro de la carpeta `backend`, copiar `.env.example` como `.env` y completar esas dos variables.
+
+> La clave `service_role` tiene acceso total a la base de datos. Solo debe existir en `.env` o en las variables secretas del hosting, nunca en el repositorio ni en el front-end.
+
+---
+
 ## Desarrollo local
 
-### Prerrequisitos
-
-- Node.js **18+**
-- npm
-- Proyecto Supabase y `DATABASE_URL` en `backend/.env`
-
-### 1. Base de datos y API
+### API
 
 ```bash
 cd backend
 npm install
-npm run init-db    # primera vez: tablas + datos demo (omite si ya hay país Ecuador)
-npm run dev        # puerto 4000 por defecto
+npm run init-db    
+npm run dev        
 ```
 
-Comprueba: `http://localhost:4000/health` y `http://localhost:4000/api/productos`.
+Para verificar que funciona, abrir `localhost:4000/health` o `localhost:4000/api/productos`.
 
-Para **volver a sembrar desde cero**, en Supabase puede borrar las filas de las tablas (o usar SQL `TRUNCATE ... CASCADE` con cuidado) y ejecutar de nuevo `npm run init-db`.
+Para resetear desde cero, borrar las filas en Supabase y volver a correr `npm run init-db`.
 
-### 2. Front-end
+### Front-end
 
 ```bash
 cd frontend
@@ -87,39 +96,23 @@ npm install
 npm run dev
 ```
 
-Abre `http://localhost:5173/admin`. El proxy de Vite envía `/api` → `http://localhost:4000`.
+Abrir `localhost:5173/admin`. El proxy de Vite redirige las llamadas a la API automáticamente.
 
-### Variables de entorno (producción front)
+---
 
-En el hosting estático (Vercel, Netlify, etc.):
+## Variables de entorno en producción
 
-- `VITE_API_BASE` — URL pública de tu API **sin** barra final, por ejemplo `https://tu-api.onrender.com`
+Para el hosting de la API 
 
-En el hosting de la API:
+| Variable | Valor |
+|----------|-------|
+| `SUPABASE_URL` | Project URL del proyecto de Supabase |
+| `SUPABASE_KEY` | Clave service_role, configurada como secreto |
 
-- `DATABASE_URL` — misma URI de Supabase (como variable secreta).
+Para el hosting del front (Vercel, Netlify, Cloudflare Pages):
 
-## Deploy sugerido
+| Variable | Valor |
+|----------|-------|
+| `VITE_API_BASE` | URL pública de la API, sin barra al final |
 
-1. **API (Render, Railway, Fly.io, VPS)**  
-   - Carpeta `backend`  
-   - Build: `npm install`  
-   - Start: `npm start`  
-   - Variable secreta: **`DATABASE_URL`**  
-   - Opcional: tras el primer deploy, ejecute **`npm run init-db`** una vez desde una shell con esa variable (o inserte datos desde Supabase).
-
-2. **Front (Vercel / Netlify / Cloudflare Pages)**  
-   - Carpeta `frontend`  
-   - Build: `npm run build`  
-   - Salida: `dist`  
-   - `VITE_API_BASE` apuntando a la API pública.
-
-Vea `render.yaml` como ejemplo; debe configurar `DATABASE_URL` en el panel de Render (no lo suba al repo).
-
-## Datos de prueba (seed)
-
-Proveedores y productos demo usan **RUC** y **cédulas coherentes** con los validadores del servidor.
-
-## Autora / contexto
-
-Especificación funcional del core: documento de **Abigail Espinosa** (ISWZ3101).
+---

@@ -4,7 +4,6 @@ import UbicacionCascade from '../components/UbicacionCascade'
 
 const emptyForm = {
   nombre_comercial: '',
-  ruc: '',
   representante_legal: '',
   documento_identidad: '',
   telefono: '',
@@ -48,7 +47,6 @@ export default function Proveedores() {
       setEditId(det.id)
       setForm({
         nombre_comercial: det.nombre_comercial,
-        ruc: det.ruc,
         representante_legal: det.representante_legal,
         documento_identidad: det.documento_identidad,
         telefono: det.telefono ?? '',
@@ -79,7 +77,6 @@ export default function Proveedores() {
     }
     const body = {
       nombre_comercial: form.nombre_comercial,
-      ruc: form.ruc,
       representante_legal: form.representante_legal,
       documento_identidad: form.documento_identidad,
       telefono: form.telefono || null,
@@ -109,11 +106,6 @@ export default function Proveedores() {
   return (
     <div className="page">
       <h1>Proveedores</h1>
-      <p className="muted">
-        La ciudad no se escribe como número (FK): elija <strong>país → provincia → ciudad</strong>.
-        La <strong>cédula</strong> del representante y el <strong>RUC</strong> se validan en el servidor
-        antes de guardar.
-      </p>
       {error && <p className="error-banner">{error}</p>}
 
       <form className="panel" onSubmit={guardar}>
@@ -127,19 +119,6 @@ export default function Proveedores() {
               required
             />
           </label>
-          <label className="field">
-            <span>RUC (13 dígitos)</span>
-            <input
-              value={form.ruc}
-              onChange={(e) => setField('ruc', e.target.value.replace(/\D/g, '').slice(0, 13))}
-              required
-              inputMode="numeric"
-              pattern="\d{13}"
-              title="Trece dígitos; validación completa en servidor"
-            />
-          </label>
-        </div>
-        <div className="field-grid two">
           <label className="field">
             <span>Representante legal</span>
             <input
@@ -157,7 +136,6 @@ export default function Proveedores() {
               }
               required
               inputMode="numeric"
-              title="Dígito verificador validado en servidor"
             />
           </label>
         </div>
@@ -197,7 +175,6 @@ export default function Proveedores() {
             <thead>
               <tr>
                 <th>Comercial</th>
-                <th>RUC</th>
                 <th>Ciudad</th>
                 <th />
               </tr>
@@ -206,7 +183,6 @@ export default function Proveedores() {
               {rows.map((r) => (
                 <tr key={r.id}>
                   <td>{r.nombre_comercial}</td>
-                  <td>{r.ruc}</td>
                   <td>
                     {r.ciudad_nombre}, {r.provincia_nombre} ({r.pais_nombre})
                   </td>

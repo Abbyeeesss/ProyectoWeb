@@ -40,16 +40,29 @@ export default function Categorias() {
   async function guardar(e) {
     e.preventDefault()
     setError('')
+    const nombreTrim = nombre.trim()
+    const descripcionTrim = descripcion.trim()
+    if (!nombreTrim) {
+      setError('El nombre es obligatorio.')
+      return
+    }
     try {
       if (editId) {
-        await api.putCategoria(editId, { nombre, descripcion })
+        await api.putCategoria(editId, { nombre: nombreTrim, descripcion: descripcionTrim })
       } else {
-        await api.postCategoria({ nombre, descripcion })
+        await api.postCategoria({ nombre: nombreTrim, descripcion: descripcionTrim || null })
       }
       cancelEdit()
       await load()
     } catch (err) {
-      setError(err.message)
+      const msg = err.message || ''
+      if (msg.includes('Ya existe una categoría')) {
+        setError(
+          `${msg} Use otro nombre o edite la fila del listado. Si corriste «npm run init-db», ya existen categorías como «Abarrotes», «Frutas y verduras» y «Bebidas».`
+        )
+      } else {
+        setError(msg)
+      }
     }
   }
 

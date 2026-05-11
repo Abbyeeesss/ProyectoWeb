@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 
-/**
- * País → provincia → ciudad: obligatorio usar selects encadenados (no entrada manual de FK).
- */
 export default function UbicacionCascade({
   ciudadId,
   onCiudadChange,

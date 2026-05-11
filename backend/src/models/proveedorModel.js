@@ -1,83 +1,109 @@
-import pool from "../db/pool.js";
+import { supabase } from "../db/supabase.js";
+
+function throwPg(error) {
+  if (!error) return;
+  const err = new Error(error.message);
+  err.code = error.code;
+  throw err;
+}
+
+const proveedorSelectAnidado =
+  "id, nombre_comercial, representante_legal, documento_identidad, telefono, email, ciudad_id, ciudad(nombre, provincia(id, nombre, pais(id, nombre)))";
+
+function flattenLista(row) {
+  const c = row.ciudad;
+  const pr = c?.provincia;
+  const pa = pr?.pais;
+  return {
+    id: row.id,
+    nombre_comercial: row.nombre_comercial,
+    representante_legal: row.representante_legal,
+    documento_identidad: row.documento_identidad,
+    telefono: row.telefono,
+    email: row.email,
+    ciudad_id: row.ciudad_id,
+    ciudad_nombre: c?.nombre ?? null,
+    provincia_nombre: pr?.nombre ?? null,
+    pais_nombre: pa?.nombre ?? null,
+  };
+}
+
+function flattenDetalle(row) {
+  const base = flattenLista(row);
+  const pr = row.ciudad?.provincia;
+  const pa = pr?.pais;
+  return {
+    id: row.id,
+    nombre_comercial: row.nombre_comercial,
+    representante_legal: row.representante_legal,
+    documento_identidad: row.documento_identidad,
+    telefono: row.telefono,
+    email: row.email,
+    ciudad_id: row.ciudad_id,
+    provincia_id: pr?.id ?? null,
+    pais_id: pa?.id ?? null,
+  };
+}
 
 export async function listarProveedores() {
-  const r = await pool.query(`
-      SELECT p.id, p.nombre_comercial, p.ruc, p.representante_legal, p.documento_identidad,
-             p.telefono, p.email, p.ciudad_id,
-             c.nombre AS ciudad_nombre, pr.nombre AS provincia_nombre, pa.nombre AS pais_nombre
-      FROM proveedor p
-      JOIN ciudad c ON c.id = p.ciudad_id
-      JOIN provincia pr ON pr.id = c.provincia_id
-      JOIN pais pa ON pa.id = pr.pais_id
-      ORDER BY p.nombre_comercial
-    `);
-  return r.rows;
+  const { data, error } = await supabase
+    .from("proveedor")
+    .select(proveedorSelectAnidado)
+    .order("nombre_comercial");
+  throwPg(error);
+  return (data ?? []).map(flattenLista);
 }
 
 export async function obtenerProveedor(id) {
-  const r = await pool.query(
-    `
-      SELECT p.id, p.nombre_comercial, p.ruc, p.representante_legal, p.documento_identidad,
-             p.telefono, p.email, p.ciudad_id,
-             c.provincia_id, pr.pais_id
-      FROM proveedor p
-      JOIN ciudad c ON c.id = p.ciudad_id
-      JOIN provincia pr ON pr.id = c.provincia_id
-      WHERE p.id = $1
-    `,
-    [id]
-  );
-  return r.rows[0] ?? null;
+  const { data, error } = await supabase
+    .from("proveedor")
+    .select(proveedorSelectAnidado)
+    .eq("id", id)
+    .maybeSingle();
+  throwPg(error);
+  return data ? flattenDetalle(data) : null;
 }
 
 export async function crearProveedor(body) {
-  const r = await pool.query(
-    `
-      INSERT INTO proveedor (nombre_comercial, ruc, representante_legal, documento_identidad,
-        telefono, email, ciudad_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id
-    `,
-    [
-      body.nombre_comercial.trim(),
-      body.ruc.trim(),
-      body.representante_legal.trim(),
-      body.documento_identidad.trim(),
-      body.telefono?.trim() || null,
-      body.email?.trim() || null,
-      body.ciudad_id,
-    ]
-  );
-  return obtenerProveedor(r.rows[0].id);
+  const { data: inserted, error } = await supabase
+    .from("proveedor")
+    .insert({
+      nombre_comercial: body.nombre_comercial.trim(),
+      representante_legal: body.representante_legal.trim(),
+      documento_identidad: body.documento_identidad.trim(),
+      telefono: body.telefono?.trim() || null,
+      email: body.email?.trim() || null,
+      ciudad_id: body.ciudad_id,
+    })
+    .select("id")
+    .single();
+  throwPg(error);
+  return obtenerProveedor(inserted.id);
 }
 
 export async function actualizarProveedor(id, body) {
-  await pool.query(
-    `
-      UPDATE proveedor SET
-        nombre_comercial = $1, ruc = $2, representante_legal = $3, documento_identidad = $4,
-        telefono = $5, email = $6, ciudad_id = $7
-      WHERE id = $8
-    `,
-    [
-      body.nombre_comercial.trim(),
-      body.ruc.trim(),
-      body.representante_legal.trim(),
-      body.documento_identidad.trim(),
-      body.telefono?.trim() || null,
-      body.email?.trim() || null,
-      body.ciudad_id,
-      id,
-    ]
-  );
+  const { error } = await supabase
+    .from("proveedor")
+    .update({
+      nombre_comercial: body.nombre_comercial.trim(),
+      representante_legal: body.representante_legal.trim(),
+      documento_identidad: body.documento_identidad.trim(),
+      telefono: body.telefono?.trim() || null,
+      email: body.email?.trim() || null,
+      ciudad_id: body.ciudad_id,
+    })
+    .eq("id", id);
+  throwPg(error);
   return obtenerProveedor(id);
 }
 
 export async function eliminarProveedor(id) {
-  await pool.query("DELETE FROM proveedor WHERE id = $1", [id]);
+  const { error } = await supabase.from("proveedor").delete().eq("id", id);
+  throwPg(error);
 }
 
 export async function existeProveedor(id) {
-  const r = await pool.query("SELECT id FROM proveedor WHERE id = $1", [id]);
-  return r.rowCount > 0;
+  const { data, error } = await supabase.from("proveedor").select("id").eq("id", id).maybeSingle();
+  throwPg(error);
+  return data != null;
 }

@@ -1,27 +1,41 @@
-import pool from "../db/pool.js";
+import { supabase } from "../db/supabase.js";
+
+function throwPg(error) {
+  if (!error) return;
+  const err = new Error(error.message);
+  err.code = error.code;
+  err.details = error.details;
+  throw err;
+}
 
 export async function listarPaises() {
-  const r = await pool.query("SELECT id, nombre FROM pais ORDER BY nombre");
-  return r.rows;
+  const { data, error } = await supabase.from("pais").select("id, nombre").order("nombre");
+  throwPg(error);
+  return data ?? [];
 }
 
 export async function listarProvinciasPorPais(paisId) {
-  const r = await pool.query(
-    "SELECT id, nombre FROM provincia WHERE pais_id = $1 ORDER BY nombre",
-    [paisId]
-  );
-  return r.rows;
+  const { data, error } = await supabase
+    .from("provincia")
+    .select("id, nombre")
+    .eq("pais_id", paisId)
+    .order("nombre");
+  throwPg(error);
+  return data ?? [];
 }
 
 export async function listarCiudadesPorProvincia(provinciaId) {
-  const r = await pool.query(
-    "SELECT id, nombre FROM ciudad WHERE provincia_id = $1 ORDER BY nombre",
-    [provinciaId]
-  );
-  return r.rows;
+  const { data, error } = await supabase
+    .from("ciudad")
+    .select("id, nombre")
+    .eq("provincia_id", provinciaId)
+    .order("nombre");
+  throwPg(error);
+  return data ?? [];
 }
 
 export async function existeCiudad(id) {
-  const r = await pool.query("SELECT id FROM ciudad WHERE id = $1", [id]);
-  return r.rowCount > 0;
+  const { data, error } = await supabase.from("ciudad").select("id").eq("id", id).maybeSingle();
+  throwPg(error);
+  return data != null;
 }

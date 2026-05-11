@@ -1,162 +1,130 @@
-/**
- * Datos demo en PostgreSQL (Supabase).
- * Ejecutar: npm run init-db
- * Si ya hay país "Ecuador", no inserta nada (idempotente por contenido).
- */
 import "../config.js";
-import { initSchema } from "../db/initSchema.js";
-import pool from "../db/pool.js";
+import { supabase } from "../db/supabase.js";
 
-await initSchema();
+function throwPg(error) {
+  if (!error) return;
+  throw Object.assign(new Error(error.message), { code: error.code });
+}
 
-const countRes = await pool.query("SELECT COUNT(*)::int AS n FROM pais");
-if (countRes.rows[0].n > 0) {
+const { count, error: countErr } = await supabase.from("pais").select("*", { count: "exact", head: true });
+throwPg(countErr);
+if (count > 0) {
   console.log('La base ya tiene datos en "pais". Omitiendo seed.');
-  await pool.end();
   process.exit(0);
 }
 
-const client = await pool.connect();
-try {
-  await client.query("BEGIN");
+const { data: pInsert, error: ePais } = await supabase.from("pais").insert({ nombre: "Ecuador" }).select("id").single();
+throwPg(ePais);
+const paisId = pInsert.id;
 
-  await client.query("INSERT INTO pais (nombre) VALUES ($1)", ["Ecuador"]);
-  const { rows: pRows } = await client.query("SELECT id FROM pais WHERE nombre = $1", [
-    "Ecuador",
-  ]);
-  const paisId = pRows[0].id;
-
-  const provincias = ["Pichincha", "Guayas", "Azuay"];
-  for (const nombre of provincias) {
-    await client.query("INSERT INTO provincia (pais_id, nombre) VALUES ($1, $2)", [
-      paisId,
-      nombre,
-    ]);
-  }
-
-  const { rows: prPi } = await client.query(
-    "SELECT id FROM provincia WHERE nombre = $1 AND pais_id = $2",
-    ["Pichincha", paisId]
-  );
-  const { rows: prGu } = await client.query(
-    "SELECT id FROM provincia WHERE nombre = $1 AND pais_id = $2",
-    ["Guayas", paisId]
-  );
-  const pichincha = prPi[0].id;
-  const guayas = prGu[0].id;
-
-  const ciudades = [
-    [pichincha, "Quito"],
-    [pichincha, "Cayambe"],
-    [guayas, "Guayaquil"],
-    [guayas, "Durán"],
-  ];
-  for (const [pid, nombre] of ciudades) {
-    await client.query("INSERT INTO ciudad (provincia_id, nombre) VALUES ($1, $2)", [
-      pid,
-      nombre,
-    ]);
-  }
-
-  const { rows: qRow } = await client.query("SELECT id FROM ciudad WHERE nombre = $1", ["Quito"]);
-  const { rows: gRow } = await client.query("SELECT id FROM ciudad WHERE nombre = $1", [
-    "Guayaquil",
-  ]);
-  const idQuito = qRow[0].id;
-  const idGye = gRow[0].id;
-
-  await client.query("INSERT INTO categoria (nombre, descripcion) VALUES ($1, $2)", [
-    "Abarrotes",
-    "Productos secos y despensa",
-  ]);
-  await client.query("INSERT INTO categoria (nombre, descripcion) VALUES ($1, $2)", [
-    "Frutas y verduras",
-    "Perecederos — alta frecuencia de reposición",
-  ]);
-  await client.query("INSERT INTO categoria (nombre, descripcion) VALUES ($1, $2)", [
-    "Bebidas",
-    "Sin alcohol",
-  ]);
-
-  const { rows: cA } = await client.query("SELECT id FROM categoria WHERE nombre = $1", [
-    "Abarrotes",
-  ]);
-  const { rows: cFV } = await client.query("SELECT id FROM categoria WHERE nombre = $1", [
-    "Frutas y verduras",
-  ]);
-  const catAbarrotes = cA[0].id;
-  const catFV = cFV[0].id;
-
-  await client.query(
-    `
-    INSERT INTO proveedor (nombre_comercial, ruc, representante_legal, documento_identidad,
-      telefono, email, ciudad_id)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-  `,
-    [
-      "Distribuidora Centro",
-      "0928175967001",
-      "Maria Vallejo",
-      "1712345675",
-      "0991112223",
-      "contacto@distcentro.demo",
-      idQuito,
-    ]
-  );
-
-  await client.query(
-    `
-    INSERT INTO proveedor (nombre_comercial, ruc, representante_legal, documento_identidad,
-      telefono, email, ciudad_id)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-  `,
-    [
-      "Importadora Sur Pacifico S.A.",
-      "1793765432007",
-      "Carlos Mendez",
-      "0928175967",
-      "042987654",
-      "ventas@surpacifico.demo",
-      idGye,
-    ]
-  );
-
-  const { rows: p1 } = await client.query(
-    "SELECT id FROM proveedor WHERE nombre_comercial = $1",
-    ["Distribuidora Centro"]
-  );
-  const { rows: p2 } = await client.query(
-    "SELECT id FROM proveedor WHERE nombre_comercial = $1",
-    ["Importadora Sur Pacifico S.A."]
-  );
-  const pid1 = p1[0].id;
-  const pid2 = p2[0].id;
-
-  await client.query(
-    `
-    INSERT INTO producto (sku, nombre, proveedor_id, categoria_id, precio_referencia,
-      es_perecedero, stock_actual, dias_lead_time)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-  `,
-    ["SKU-ARROZ-1", "Arroz 1 kg", pid1, catAbarrotes, 1.25, false, 40, 5]
-  );
-
-  await client.query(
-    `
-    INSERT INTO producto (sku, nombre, proveedor_id, categoria_id, precio_referencia,
-      es_perecedero, stock_actual, dias_lead_time)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-  `,
-    ["SKU-TOM-01", "Tomate kg", pid2, catFV, 0.85, true, 12, 3]
-  );
-
-  await client.query("COMMIT");
-  console.log("Seed completado en PostgreSQL.");
-} catch (e) {
-  await client.query("ROLLBACK");
-  console.error(e);
-  process.exitCode = 1;
-} finally {
-  client.release();
-  await pool.end();
+for (const nombre of ["Pichincha", "Guayas", "Azuay"]) {
+  const { error } = await supabase.from("provincia").insert({ pais_id: paisId, nombre });
+  throwPg(error);
 }
+
+const { data: prPi, error: ePi } = await supabase
+  .from("provincia")
+  .select("id")
+  .eq("nombre", "Pichincha")
+  .eq("pais_id", paisId)
+  .single();
+throwPg(ePi);
+const { data: prGu, error: eGu } = await supabase
+  .from("provincia")
+  .select("id")
+  .eq("nombre", "Guayas")
+  .eq("pais_id", paisId)
+  .single();
+throwPg(eGu);
+const pichincha = prPi.id;
+const guayas = prGu.id;
+
+for (const [provincia_id, nombre] of [
+  [pichincha, "Quito"],
+  [pichincha, "Cayambe"],
+  [guayas, "Guayaquil"],
+  [guayas, "Durán"],
+]) {
+  const { error } = await supabase.from("ciudad").insert({ provincia_id, nombre });
+  throwPg(error);
+}
+
+const { data: qRow } = await supabase.from("ciudad").select("id").eq("nombre", "Quito").single();
+const { data: gRow } = await supabase.from("ciudad").select("id").eq("nombre", "Guayaquil").single();
+const idQuito = qRow.id;
+const idGye = gRow.id;
+
+for (const [nombre, descripcion] of [
+  ["Abarrotes", "Productos secos y despensa"],
+  ["Frutas y verduras", "Perecederos — alta frecuencia de reposición"],
+  ["Bebidas", "Sin alcohol"],
+]) {
+  const { error } = await supabase.from("categoria").insert({ nombre, descripcion });
+  throwPg(error);
+}
+
+const { data: cA } = await supabase.from("categoria").select("id").eq("nombre", "Abarrotes").single();
+const { data: cFV } = await supabase.from("categoria").select("id").eq("nombre", "Frutas y verduras").single();
+const catAbarrotes = cA.id;
+const catFV = cFV.id;
+
+for (const row of [
+  {
+    nombre_comercial: "Distribuidora Centro",
+    representante_legal: "Maria Vallejo",
+    documento_identidad: "1712345675",
+    telefono: "0991112223",
+    email: "contacto@distcentro.demo",
+    ciudad_id: idQuito,
+  },
+  {
+    nombre_comercial: "Importadora Sur Pacifico S.A.",
+    representante_legal: "Carlos Mendez",
+    documento_identidad: "0928175967",
+    telefono: "042987654",
+    email: "ventas@surpacifico.demo",
+    ciudad_id: idGye,
+  },
+]) {
+  const { error } = await supabase.from("proveedor").insert(row);
+  throwPg(error);
+}
+
+const { data: pv1 } = await supabase
+  .from("proveedor")
+  .select("id")
+  .eq("nombre_comercial", "Distribuidora Centro")
+  .single();
+const { data: pv2 } = await supabase
+  .from("proveedor")
+  .select("id")
+  .eq("nombre_comercial", "Importadora Sur Pacifico S.A.")
+  .single();
+const pid1 = pv1.id;
+const pid2 = pv2.id;
+
+const { error: eProd1 } = await supabase.from("producto").insert({
+  sku: "SKU-ARROZ-1",
+  nombre: "Arroz 1 kg",
+  proveedor_id: pid1,
+  categoria_id: catAbarrotes,
+  precio_referencia: 1.25,
+  es_perecedero: false,
+  stock_actual: 40,
+  dias_lead_time: 5,
+});
+throwPg(eProd1);
+
+const { error: eProd2 } = await supabase.from("producto").insert({
+  sku: "SKU-TOM-01",
+  nombre: "Tomate kg",
+  proveedor_id: pid2,
+  categoria_id: catFV,
+  precio_referencia: 0.85,
+  es_perecedero: true,
+  stock_actual: 12,
+  dias_lead_time: 3,
+});
+throwPg(eProd2);
+
+console.log("Seed completado (Supabase JS).");

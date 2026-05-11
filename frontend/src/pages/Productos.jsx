@@ -103,10 +103,6 @@ export default function Productos() {
   return (
     <div className="page">
       <h1>Productos</h1>
-      <p className="muted">
-        Proveedor y categoría se eligen de listas; el API rechaza IDs que no existan (no confiar solo en el
-        navegador).
-      </p>
       {error && <p className="error-banner">{error}</p>}
 
       <form className="panel" onSubmit={guardar}>

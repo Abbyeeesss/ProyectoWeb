@@ -7,12 +7,14 @@ dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
 export const PORT = Number(process.env.PORT) || 4000;
 
-/** Cadena URI PostgreSQL de Supabase (pestaña Database → Connection string → URI). */
-export const DATABASE_URL = process.env.DATABASE_URL?.trim();
+export const SUPABASE_URL = process.env.SUPABASE_URL?.trim();
+export const SUPABASE_KEY = (
+  process.env.SUPABASE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
+)?.trim();
 
-if (!DATABASE_URL) {
+if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error(
-    "[config] Falta DATABASE_URL. Cree backend/.env (vea .env.example) con la URI de su proyecto Supabase."
+    "[config] Faltan SUPABASE_URL y/o SUPABASE_KEY en backend/.env (clave service_role de Supabase; solo servidor)."
   );
   process.exit(1);
 }
