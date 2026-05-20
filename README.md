@@ -62,7 +62,7 @@ frontend/
 ## Configuración de Supabase
 
 1. Crear un proyecto en [supabase.com](https://supabase.com/dashboard).
-2. En el **SQL Editor**, ejecutar `backend/src/db/schema.sql` para crear las tablas. Opcional: `seed-ventas-demo.sql` si ya tienes productos y quieres ventas de prueba.
+2. En el **SQL Editor**, ejecutar `backend/src/db/schema.sql` para crear las tablas. Si la base ya existía, añade lo que falte con `punto_reorden.sql` o `seed-ventas-demo.sql`.
 3. Ir a **Project Settings** y luego a **API**. Ahí se encuentran dos valores:
    - **Project URL**, que va como `SUPABASE_URL`
    - La clave **service_role**, que va como `SUPABASE_KEY`

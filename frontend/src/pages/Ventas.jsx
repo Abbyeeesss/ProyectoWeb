@@ -28,6 +28,7 @@ export default function Ventas() {
   const [productos, setProductos] = useState([])
   const [resultado, setResultado] = useState(null)
   const [promedios, setPromedios] = useState(null)
+  const [puntosReorden, setPuntosReorden] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -37,17 +38,28 @@ export default function Ventas() {
     producto_id: productoId || undefined,
   })
 
+  async function ejecutarBusqueda(f) {
+    const [data, prom] = await Promise.all([
+      api.getVentasHistorial(f),
+      api.getVentasPromedioDiario(f),
+    ])
+    setResultado(data)
+    setPromedios(prom)
+
+    if (prom.total_productos > 0) {
+      const guardado = await api.guardarPuntosReorden(f)
+      setPuntosReorden(guardado.registros)
+    } else {
+      setPuntosReorden(await api.getPuntosReorden())
+    }
+  }
+
   async function buscar(e) {
     e?.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const [data, prom] = await Promise.all([
-        api.getVentasHistorial(filtros()),
-        api.getVentasPromedioDiario(filtros()),
-      ])
-      setResultado(data)
-      setPromedios(prom)
+      await ejecutarBusqueda(filtros())
     } catch (err) {
       setResultado(null)
       setPromedios(null)
@@ -64,15 +76,10 @@ export default function Ventas() {
       setError('')
       const f = { desde: defaults.desde, hasta: defaults.hasta }
       try {
-        const [prods, data, prom] = await Promise.all([
-          api.getProductos(),
-          api.getVentasHistorial(f),
-          api.getVentasPromedioDiario(f),
-        ])
+        const prods = await api.getProductos()
         if (cancelled) return
         setProductos(prods)
-        setResultado(data)
-        setPromedios(prom)
+        await ejecutarBusqueda(f)
       } catch (err) {
         if (!cancelled) setError(err.message)
       } finally {
@@ -86,6 +93,7 @@ export default function Ventas() {
 
   const ventas = resultado?.ventas ?? []
   const filasPromedio = promedios?.productos ?? []
+  const puntoPorProducto = new Map(puntosReorden.map((p) => [p.producto_id, p]))
 
   return (
     <div className="page">
@@ -118,7 +126,7 @@ export default function Ventas() {
         </div>
         <div className="actions">
           <button type="submit" disabled={loading}>
-            {loading ? 'Buscando…' : 'Buscar'}
+            {loading ? 'Calculando…' : 'Buscar'}
           </button>
         </div>
       </form>
@@ -133,6 +141,11 @@ export default function Ventas() {
             </span>
           )}
         </div>
+        {filasPromedio.length > 0 && (
+          <p className="muted" style={{ marginTop: 0, marginBottom: '0.75rem' }}>
+            Al buscar se actualizan los puntos de reorden (promedio × lead time) para el rango elegido.
+          </p>
+        )}
         {loading && !promedios ? (
           <p>Cargando…</p>
         ) : filasPromedio.length === 0 ? (
@@ -146,20 +159,29 @@ export default function Ventas() {
                 <th>Unidades vendidas</th>
                 <th>Registros</th>
                 <th>Promedio / día</th>
+                <th>Lead time</th>
+                <th>Punto reorden</th>
               </tr>
             </thead>
             <tbody>
-              {filasPromedio.map((p) => (
-                <tr key={p.producto_id}>
-                  <td>{p.producto_sku}</td>
-                  <td>{p.producto_nombre}</td>
-                  <td>{p.unidades_vendidas}</td>
-                  <td>{p.registros_venta}</td>
-                  <td>
-                    <strong>{p.promedio_unidades_por_dia}</strong>
-                  </td>
-                </tr>
-              ))}
+              {filasPromedio.map((p) => {
+                const guardado = puntoPorProducto.get(p.producto_id)
+                return (
+                  <tr key={p.producto_id}>
+                    <td>{p.producto_sku}</td>
+                    <td>{p.producto_nombre}</td>
+                    <td>{p.unidades_vendidas}</td>
+                    <td>{p.registros_venta}</td>
+                    <td>
+                      <strong>{p.promedio_unidades_por_dia}</strong>
+                    </td>
+                    <td>{guardado?.dias_lead_time ?? '—'}</td>
+                    <td>
+                      <strong>{guardado?.punto_reorden ?? '—'}</strong>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}

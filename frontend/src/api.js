@@ -62,4 +62,12 @@ export const api = {
     }
     return request(`/ventas/promedio-diario?${q}`)
   },
+  getPuntosReorden: () => request('/punto-reorden'),
+  guardarPuntosReorden: ({ desde, hasta, producto_id }) => {
+    const q = new URLSearchParams({ desde, hasta })
+    if (producto_id != null && producto_id !== '') {
+      q.set('producto_id', String(producto_id))
+    }
+    return request(`/punto-reorden/guardar?${q}`, { method: 'POST' })
+  },
 }
