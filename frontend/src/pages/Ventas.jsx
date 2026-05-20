@@ -27,22 +27,30 @@ export default function Ventas() {
   const [productoId, setProductoId] = useState('')
   const [productos, setProductos] = useState([])
   const [resultado, setResultado] = useState(null)
+  const [promedios, setPromedios] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const filtros = () => ({
+    desde,
+    hasta,
+    producto_id: productoId || undefined,
+  })
 
   async function buscar(e) {
     e?.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const data = await api.getVentasHistorial({
-        desde,
-        hasta,
-        producto_id: productoId || undefined,
-      })
+      const [data, prom] = await Promise.all([
+        api.getVentasHistorial(filtros()),
+        api.getVentasPromedioDiario(filtros()),
+      ])
       setResultado(data)
+      setPromedios(prom)
     } catch (err) {
       setResultado(null)
+      setPromedios(null)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -54,14 +62,17 @@ export default function Ventas() {
     ;(async () => {
       setLoading(true)
       setError('')
+      const f = { desde: defaults.desde, hasta: defaults.hasta }
       try {
-        const [prods, data] = await Promise.all([
+        const [prods, data, prom] = await Promise.all([
           api.getProductos(),
-          api.getVentasHistorial({ desde: defaults.desde, hasta: defaults.hasta }),
+          api.getVentasHistorial(f),
+          api.getVentasPromedioDiario(f),
         ])
         if (cancelled) return
         setProductos(prods)
         setResultado(data)
+        setPromedios(prom)
       } catch (err) {
         if (!cancelled) setError(err.message)
       } finally {
@@ -74,11 +85,11 @@ export default function Ventas() {
   }, [])
 
   const ventas = resultado?.ventas ?? []
+  const filasPromedio = promedios?.productos ?? []
 
   return (
     <div className="page">
       <h1>Historial de ventas</h1>
-      <p className="muted">Consulta ventas registradas por rango de fechas y producto.</p>
 
       {error && <p className="error-banner">{error}</p>}
 
@@ -114,7 +125,49 @@ export default function Ventas() {
 
       <div className="panel">
         <div className="core-row" style={{ marginBottom: '0.5rem' }}>
-          <h2 style={{ margin: 0 }}>Resultados</h2>
+          <h2 style={{ margin: 0 }}>Promedio diario por producto</h2>
+          {promedios && (
+            <span className="core-chip">
+              {promedios.total_productos} producto{promedios.total_productos === 1 ? '' : 's'} ·{' '}
+              {promedios.dias_calendario} días
+            </span>
+          )}
+        </div>
+        {loading && !promedios ? (
+          <p>Cargando…</p>
+        ) : filasPromedio.length === 0 ? (
+          <p className="muted">Sin ventas en el rango: no hay promedios que calcular.</p>
+        ) : (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Producto</th>
+                <th>Unidades vendidas</th>
+                <th>Registros</th>
+                <th>Promedio / día</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filasPromedio.map((p) => (
+                <tr key={p.producto_id}>
+                  <td>{p.producto_sku}</td>
+                  <td>{p.producto_nombre}</td>
+                  <td>{p.unidades_vendidas}</td>
+                  <td>{p.registros_venta}</td>
+                  <td>
+                    <strong>{p.promedio_unidades_por_dia}</strong>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className="panel">
+        <div className="core-row" style={{ marginBottom: '0.5rem' }}>
+          <h2 style={{ margin: 0 }}>Detalle de ventas</h2>
           {resultado && (
             <span className="core-chip">
               {resultado.total} venta{resultado.total === 1 ? '' : 's'} · {resultado.desde} — {resultado.hasta}

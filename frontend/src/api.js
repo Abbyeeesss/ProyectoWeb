@@ -55,4 +55,11 @@ export const api = {
     }
     return request(`/ventas?${q}`)
   },
+  getVentasPromedioDiario: ({ desde, hasta, producto_id }) => {
+    const q = new URLSearchParams({ desde, hasta })
+    if (producto_id != null && producto_id !== '') {
+      q.set('producto_id', String(producto_id))
+    }
+    return request(`/ventas/promedio-diario?${q}`)
+  },
 }

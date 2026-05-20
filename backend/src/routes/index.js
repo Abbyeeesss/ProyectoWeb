@@ -28,6 +28,7 @@ router.post("/productos", asyncHandler(productoController.create));
 router.put("/productos/:id", asyncHandler(productoController.update));
 router.delete("/productos/:id", asyncHandler(productoController.remove));
 
+router.get("/ventas/promedio-diario", asyncHandler(ventaController.promedioDiarioPorProducto));
 router.get("/ventas", asyncHandler(ventaController.historialPorRango));
 
 export default router;
