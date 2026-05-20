@@ -30,9 +30,9 @@ Está implementado en `sensible.js` dentro de `validators`, y se usa desde `prov
 
 En lugar de pedir que el usuario ingrese un ID numérico, todo se resuelve con selectores. La ubicación funciona en cascada: primero se elige el país, luego la provincia, luego la ciudad. Para productos, el proveedor y la categoría también se seleccionan desde un `<select>`, y el servidor verifica que los IDs existan antes de guardar.
 
-### 3. Datos de prueba coherentes
+### 3. Datos de prueba en SQL
 
-El seed incluye proveedores y productos con cédulas que pasan el validador del servidor, para que las pruebas locales funcionen sin ajustes.
+Los datos iniciales y de demo se cargan desde el **SQL Editor** de Supabase (`schema.sql`, `seed-ventas-demo.sql`, etc.), no desde scripts Node.
 
 ---
 
@@ -47,9 +47,8 @@ backend/
     validators/
     db/
       schema.sql
+      seed-ventas-demo.sql
       supabase.js
-    scripts/
-      seed.js
 
 frontend/
   src/
@@ -63,7 +62,7 @@ frontend/
 ## Configuración de Supabase
 
 1. Crear un proyecto en [supabase.com](https://supabase.com/dashboard).
-2. En el **SQL Editor**, ejecutar el contenido de `schema.sql` para crear las tablas.
+2. En el **SQL Editor**, ejecutar `backend/src/db/schema.sql` para crear las tablas. Opcional: `seed-ventas-demo.sql` si ya tienes productos y quieres ventas de prueba.
 3. Ir a **Project Settings** y luego a **API**. Ahí se encuentran dos valores:
    - **Project URL**, que va como `SUPABASE_URL`
    - La clave **service_role**, que va como `SUPABASE_KEY`
@@ -80,13 +79,10 @@ frontend/
 ```bash
 cd backend
 npm install
-npm run init-db    
-npm run dev        
+npm run dev
 ```
 
 Para verificar que funciona, abrir `localhost:4000/health` o `localhost:4000/api/productos`.
-
-Para resetear desde cero, borrar las filas en Supabase y volver a correr `npm run init-db`.
 
 ### Front-end
 
@@ -96,7 +92,7 @@ npm install
 npm run dev
 ```
 
-Abrir `localhost:5173/admin`. El proxy de Vite redirige las llamadas a la API automáticamente.
+Abrir `localhost:5173/core`. El proxy de Vite redirige las llamadas a la API automáticamente.
 
 ---
 

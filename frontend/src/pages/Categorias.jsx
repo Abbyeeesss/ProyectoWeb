@@ -58,7 +58,7 @@ export default function Categorias() {
       const msg = err.message || ''
       if (msg.includes('Ya existe una categoría')) {
         setError(
-          `${msg} Use otro nombre o edite la fila del listado. Si corriste «npm run init-db», ya existen categorías como «Abarrotes», «Frutas y verduras» y «Bebidas».`
+          `${msg} Use otro nombre o edite la fila del listado.`
         )
       } else {
         setError(msg)

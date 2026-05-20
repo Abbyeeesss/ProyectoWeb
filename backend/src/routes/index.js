@@ -4,6 +4,7 @@ import * as ubicacionController from "../controllers/ubicacionController.js";
 import * as categoriaController from "../controllers/categoriaController.js";
 import * as proveedorController from "../controllers/proveedorController.js";
 import * as productoController from "../controllers/productoController.js";
+import * as ventaController from "../controllers/ventaController.js";
 
 const router = Router();
 
@@ -26,5 +27,7 @@ router.get("/productos", asyncHandler(productoController.list));
 router.post("/productos", asyncHandler(productoController.create));
 router.put("/productos/:id", asyncHandler(productoController.update));
 router.delete("/productos/:id", asyncHandler(productoController.remove));
+
+router.get("/ventas", asyncHandler(ventaController.historialPorRango));
 
 export default router;

@@ -6,6 +6,12 @@ export default function AdminHome() {
       <h1>Administración — Abastecimiento minorista</h1>
       <ul className="card-list">
         <li>
+          <Link to="/core">
+            <strong>Core — Órdenes sugeridas</strong>
+            <span>Home, detalle, historial y órdenes (wireframe)</span>
+          </Link>
+        </li>
+        <li>
           <Link to="/admin/proveedores">
             <strong>Proveedores</strong>
           </Link>

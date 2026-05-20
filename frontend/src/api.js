@@ -48,4 +48,11 @@ export const api = {
   putProducto: (id, body) =>
     request(`/productos/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   deleteProducto: (id) => request(`/productos/${id}`, { method: 'DELETE' }),
+  getVentasHistorial: ({ desde, hasta, producto_id }) => {
+    const q = new URLSearchParams({ desde, hasta })
+    if (producto_id != null && producto_id !== '') {
+      q.set('producto_id', String(producto_id))
+    }
+    return request(`/ventas?${q}`)
+  },
 }
