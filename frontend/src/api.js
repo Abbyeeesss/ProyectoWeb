@@ -71,6 +71,10 @@ export const api = {
     return request(`/ventas/desviacion-estandar?${q}`)
   },
   getPuntosReorden: () => request('/punto-reorden'),
+  getComparacionStockPuntoReorden: (producto_id) => {
+    const q = producto_id != null && producto_id !== '' ? `?producto_id=${encodeURIComponent(producto_id)}` : ''
+    return request(`/punto-reorden/comparacion-stock${q}`)
+  },
   guardarPuntosReorden: ({ desde, hasta, producto_id }) => {
     const q = new URLSearchParams({ desde, hasta })
     if (producto_id != null && producto_id !== '') {

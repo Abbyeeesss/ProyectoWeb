@@ -93,3 +93,55 @@ export async function listarPuntosReorden() {
   throwPg(error);
   return (data ?? []).map(flattenPunto);
 }
+
+export async function compararStockActualVsPuntoReordenPorProducto({ producto_id } = {}) {
+  let queryProductos = supabase
+    .from("producto")
+    .select("id, sku, nombre, stock_actual, proveedor(nombre_comercial)")
+    .order("nombre");
+
+  if (producto_id != null) {
+    queryProductos = queryProductos.eq("id", producto_id);
+  }
+
+  const { data: productos, error: errProd } = await queryProductos;
+  throwPg(errProd);
+
+  const { data: puntos, error: errPuntos } = await supabase
+    .from("punto_reorden")
+    .select("producto_id, punto_reorden, velocidad_consumo, lead_time_dias");
+  throwPg(errPuntos);
+
+  const puntoPorProducto = new Map((puntos ?? []).map((p) => [p.producto_id, p]));
+
+  const alertas = [];
+
+  for (const prod of productos ?? []) {
+    const punto = puntoPorProducto.get(prod.id);
+    if (!punto) continue;
+
+    const stock_actual = redondear2(prod.stock_actual);
+    const punto_reorden = redondear2(punto.punto_reorden);
+    if (stock_actual > punto_reorden) continue;
+
+    alertas.push({
+      producto_id: prod.id,
+      sku: prod.sku,
+      nombre: prod.nombre,
+      proveedor_nombre: prod.proveedor?.nombre_comercial ?? null,
+      stock_actual,
+      punto_reorden,
+      velocidad_consumo: redondear2(punto.velocidad_consumo),
+      lead_time_dias: punto.lead_time_dias,
+      diferencia: redondear2(stock_actual - punto_reorden),
+      estado: "stock_en_o_bajo_punto_reorden",
+    });
+  }
+
+  alertas.sort((a, b) => a.diferencia - b.diferencia);
+
+  return {
+    total: alertas.length,
+    productos: alertas,
+  };
+}
