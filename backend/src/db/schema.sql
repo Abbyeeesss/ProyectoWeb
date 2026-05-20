@@ -65,8 +65,8 @@ create table if not exists punto_reorden (
   hasta                 date not null,
   dias_calendario       integer not null check (dias_calendario > 0),
   unidades_vendidas     numeric(12, 4) not null,
-  promedio_unidades_dia numeric(12, 4) not null,
-  dias_lead_time        integer not null check (dias_lead_time > 0),
+  velocidad_consumo     numeric(12, 4) not null,
+  lead_time_dias        integer not null check (lead_time_dias > 0),
   punto_reorden         numeric(12, 4) not null,
   calculado_en          timestamptz not null default now(),
   unique (producto_id)

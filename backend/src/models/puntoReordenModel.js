@@ -13,7 +13,11 @@ function throwPg(error) {
 }
 
 const puntoSelect =
-  "id, producto_id, desde, hasta, dias_calendario, unidades_vendidas, promedio_unidades_dia, dias_lead_time, punto_reorden, calculado_en, producto(sku, nombre, stock_actual)";
+  "id, producto_id, desde, hasta, dias_calendario, unidades_vendidas, velocidad_consumo, lead_time_dias, punto_reorden, calculado_en, producto(sku, nombre, stock_actual)";
+
+export function calcularPuntoReorden(velocidad_consumo, lead_time_dias) {
+  return redondear2(Number(velocidad_consumo) * Number(lead_time_dias));
+}
 
 function flattenPunto(row) {
   return {
@@ -23,8 +27,8 @@ function flattenPunto(row) {
     hasta: row.hasta,
     dias_calendario: row.dias_calendario,
     unidades_vendidas: redondear2(row.unidades_vendidas),
-    promedio_unidades_dia: redondear2(row.promedio_unidades_dia),
-    dias_lead_time: row.dias_lead_time,
+    velocidad_consumo: redondear2(row.velocidad_consumo),
+    lead_time_dias: row.lead_time_dias,
     punto_reorden: redondear2(row.punto_reorden),
     calculado_en: row.calculado_en,
     producto_sku: row.producto?.sku ?? null,
@@ -49,17 +53,17 @@ export async function guardarPuntosReordenDesdeVentas({ desde, hasta, producto_i
 
   const calculado_en = new Date().toISOString();
   const filas = productos.map((p) => {
-    const dias_lead_time = leadPorId.get(p.producto_id) ?? 7;
-    const promedio = p.promedio_unidades_por_dia;
-    const punto_reorden = redondear2(promedio * dias_lead_time);
+    const lead_time_dias = leadPorId.get(p.producto_id) ?? 7;
+    const velocidad_consumo = redondear2(p.promedio_unidades_por_dia);
+    const punto_reorden = calcularPuntoReorden(velocidad_consumo, lead_time_dias);
     return {
       producto_id: p.producto_id,
       desde,
       hasta,
       dias_calendario,
       unidades_vendidas: redondear2(p.unidades_vendidas),
-      promedio_unidades_dia: redondear2(promedio),
-      dias_lead_time,
+      velocidad_consumo,
+      lead_time_dias,
       punto_reorden,
       calculado_en,
     };

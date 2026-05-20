@@ -166,9 +166,9 @@ export default function Ventas() {
                 <th>Producto</th>
                 <th>Unidades vendidas</th>
                 <th>Registros</th>
-                <th>Promedio / día</th>
+                <th>Velocidad consumo</th>
                 <th>Desv. estándar / día</th>
-                <th>Lead time (proveedor)</th>
+                <th>Lead time (días)</th>
                 <th>Punto reorden</th>
               </tr>
             </thead>
@@ -182,12 +182,12 @@ export default function Ventas() {
                     <td>{formato2(p.unidades_vendidas)}</td>
                     <td>{p.registros_venta}</td>
                     <td>
-                      <strong>{formato2(p.promedio_unidades_por_dia)}</strong>
+                      <strong>{formato2(guardado?.velocidad_consumo ?? p.promedio_unidades_por_dia)}</strong>
                     </td>
                     <td>
                       <strong>{formato2(desviacionPorProducto.get(p.producto_id))}</strong>
                     </td>
-                    <td>{guardado?.dias_lead_time ?? '—'}</td>
+                    <td>{guardado?.lead_time_dias ?? '—'}</td>
                     <td>
                       <strong>{formato2(guardado?.punto_reorden)}</strong>
                     </td>
