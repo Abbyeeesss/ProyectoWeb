@@ -19,6 +19,11 @@ async function validarCuerpoProveedor(body) {
     errores.push("ciudad_id debe referenciar una ciudad existente (use los desplegables).");
   }
 
+  const lead_time_dias = Number(body.lead_time_dias);
+  if (body.lead_time_dias != null && body.lead_time_dias !== "" && (!lead_time_dias || lead_time_dias < 1)) {
+    errores.push("lead_time_dias debe ser un entero mayor o igual a 1.");
+  }
+
   if (errores.length) return { ok: false, errores };
 
   return {
@@ -30,8 +35,16 @@ async function validarCuerpoProveedor(body) {
       telefono: body.telefono,
       email: body.email,
       ciudad_id,
+      lead_time_dias: body.lead_time_dias,
     },
   };
+}
+
+export async function getLeadTimeDias(req, res) {
+  const id = Number(req.params.id);
+  const row = await proveedorModel.obtenerLeadTimeDiasProveedor(id);
+  if (!row) return res.status(404).json({ error: "Proveedor no encontrado." });
+  res.json(row);
 }
 
 export async function list(req, res) {

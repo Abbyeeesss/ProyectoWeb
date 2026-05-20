@@ -1,4 +1,5 @@
 import { supabase } from "../db/supabase.js";
+import { obtenerLeadTimeDiasPorProductoIds } from "./proveedorModel.js";
 import {
   calcularPromedioUnidadesVendidasPorDiaPorProducto,
   redondear2,
@@ -44,13 +45,7 @@ export async function guardarPuntosReordenDesdeVentas({ desde, hasta, producto_i
   }
 
   const ids = productos.map((p) => p.producto_id);
-  const { data: meta, error: metaErr } = await supabase
-    .from("producto")
-    .select("id, dias_lead_time")
-    .in("id", ids);
-  throwPg(metaErr);
-
-  const leadPorId = new Map((meta ?? []).map((m) => [m.id, Math.max(1, Number(m.dias_lead_time) || 7)]));
+  const leadPorId = await obtenerLeadTimeDiasPorProductoIds(ids);
 
   const calculado_en = new Date().toISOString();
   const filas = productos.map((p) => {

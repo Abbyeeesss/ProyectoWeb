@@ -9,6 +9,7 @@ const emptyForm = {
   telefono: '',
   email: '',
   ciudad_id: '',
+  lead_time_dias: '7',
 }
 
 export default function Proveedores() {
@@ -52,6 +53,7 @@ export default function Proveedores() {
         telefono: det.telefono ?? '',
         email: det.email ?? '',
         ciudad_id: det.ciudad_id,
+        lead_time_dias: String(det.lead_time_dias ?? 7),
       })
       setInicialPaisId(det.pais_id)
       setInicialProvinciaId(det.provincia_id)
@@ -82,6 +84,7 @@ export default function Proveedores() {
       telefono: form.telefono || null,
       email: form.email || null,
       ciudad_id,
+      lead_time_dias: form.lead_time_dias,
     }
     try {
       if (editId) await api.putProveedor(editId, body)
@@ -155,6 +158,16 @@ export default function Proveedores() {
             <span>Email</span>
             <input type="email" value={form.email} onChange={(e) => setField('email', e.target.value)} />
           </label>
+          <label className="field">
+            <span>Lead time (días)</span>
+            <input
+              type="number"
+              min="1"
+              value={form.lead_time_dias}
+              onChange={(e) => setField('lead_time_dias', e.target.value)}
+              required
+            />
+          </label>
         </div>
         <div className="actions">
           <button type="submit">Guardar</button>
@@ -175,6 +188,7 @@ export default function Proveedores() {
             <thead>
               <tr>
                 <th>Comercial</th>
+                <th>Lead time</th>
                 <th>Ciudad</th>
                 <th />
               </tr>
@@ -183,6 +197,7 @@ export default function Proveedores() {
               {rows.map((r) => (
                 <tr key={r.id}>
                   <td>{r.nombre_comercial}</td>
+                  <td>{r.lead_time_dias}</td>
                   <td>
                     {r.ciudad_nombre}, {r.provincia_nombre} ({r.pais_nombre})
                   </td>

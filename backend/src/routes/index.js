@@ -19,6 +19,7 @@ router.put("/categorias/:id", asyncHandler(categoriaController.update));
 router.delete("/categorias/:id", asyncHandler(categoriaController.remove));
 
 router.get("/proveedores", asyncHandler(proveedorController.list));
+router.get("/proveedores/:id/lead-time", asyncHandler(proveedorController.getLeadTimeDias));
 router.get("/proveedores/:id", asyncHandler(proveedorController.getOne));
 router.post("/proveedores", asyncHandler(proveedorController.create));
 router.put("/proveedores/:id", asyncHandler(proveedorController.update));

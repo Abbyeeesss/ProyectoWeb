@@ -39,6 +39,7 @@ export const api = {
   deleteCategoria: (id) => request(`/categorias/${id}`, { method: 'DELETE' }),
   getProveedores: () => request('/proveedores'),
   getProveedor: (id) => request(`/proveedores/${id}`),
+  getProveedorLeadTime: (id) => request(`/proveedores/${id}/lead-time`),
   postProveedor: (body) => request('/proveedores', { method: 'POST', body: JSON.stringify(body) }),
   putProveedor: (id, body) =>
     request(`/proveedores/${id}`, { method: 'PUT', body: JSON.stringify(body) }),

@@ -168,7 +168,7 @@ export default function Ventas() {
                 <th>Registros</th>
                 <th>Promedio / día</th>
                 <th>Desv. estándar / día</th>
-                <th>Lead time</th>
+                <th>Lead time (proveedor)</th>
                 <th>Punto reorden</th>
               </tr>
             </thead>

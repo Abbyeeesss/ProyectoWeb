@@ -31,7 +31,8 @@ create table if not exists proveedor (
   documento_identidad text not null,
   telefono            text,
   email               text,
-  ciudad_id           bigint not null references ciudad(id)
+  ciudad_id           bigint not null references ciudad(id),
+  lead_time_dias      integer not null default 7 check (lead_time_dias > 0)
 );
 
 create table if not exists producto (

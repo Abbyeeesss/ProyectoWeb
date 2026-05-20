@@ -32,7 +32,7 @@ En lugar de pedir que el usuario ingrese un ID numérico, todo se resuelve con s
 
 ### 3. Datos de prueba en SQL
 
-Los datos iniciales y de demo se cargan desde el **SQL Editor** de Supabase (`schema.sql`, `seed-ventas-demo.sql`, etc.), no desde scripts Node.
+Los datos iniciales se cargan desde el **SQL Editor** de Supabase (`backend/src/db/schema.sql`).
 
 ---
 
@@ -47,7 +47,6 @@ backend/
     validators/
     db/
       schema.sql
-      seed-ventas-demo.sql
       supabase.js
 
 frontend/
@@ -62,7 +61,7 @@ frontend/
 ## Configuración de Supabase
 
 1. Crear un proyecto en [supabase.com](https://supabase.com/dashboard).
-2. En el **SQL Editor**, ejecutar `backend/src/db/schema.sql` para crear las tablas. Si la base ya existía, añade lo que falte con `punto_reorden.sql` o `seed-ventas-demo.sql`.
+2. En el **SQL Editor**, ejecutar `backend/src/db/schema.sql` para crear las tablas.
 3. Ir a **Project Settings** y luego a **API**. Ahí se encuentran dos valores:
    - **Project URL**, que va como `SUPABASE_URL`
    - La clave **service_role**, que va como `SUPABASE_KEY`
