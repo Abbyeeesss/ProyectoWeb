@@ -20,6 +20,12 @@ function formatearFecha(iso) {
   })
 }
 
+function formato2(valor) {
+  const n = Number(valor)
+  if (!Number.isFinite(n)) return '—'
+  return n.toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 export default function Ventas() {
   const defaults = rangoPorDefecto()
   const [desde, setDesde] = useState(defaults.desde)
@@ -28,6 +34,7 @@ export default function Ventas() {
   const [productos, setProductos] = useState([])
   const [resultado, setResultado] = useState(null)
   const [promedios, setPromedios] = useState(null)
+  const [desviaciones, setDesviaciones] = useState(null)
   const [puntosReorden, setPuntosReorden] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -39,12 +46,14 @@ export default function Ventas() {
   })
 
   async function ejecutarBusqueda(f) {
-    const [data, prom] = await Promise.all([
+    const [data, prom, desv] = await Promise.all([
       api.getVentasHistorial(f),
       api.getVentasPromedioDiario(f),
+      api.getVentasDesviacionEstandar(f),
     ])
     setResultado(data)
     setPromedios(prom)
+    setDesviaciones(desv)
 
     if (prom.total_productos > 0) {
       const guardado = await api.guardarPuntosReorden(f)
@@ -63,6 +72,7 @@ export default function Ventas() {
     } catch (err) {
       setResultado(null)
       setPromedios(null)
+      setDesviaciones(null)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -94,6 +104,9 @@ export default function Ventas() {
   const ventas = resultado?.ventas ?? []
   const filasPromedio = promedios?.productos ?? []
   const puntoPorProducto = new Map(puntosReorden.map((p) => [p.producto_id, p]))
+  const desviacionPorProducto = new Map(
+    (desviaciones?.productos ?? []).map((p) => [p.producto_id, p.desviacion_estandar_diaria]),
+  )
 
   return (
     <div className="page">
@@ -141,11 +154,6 @@ export default function Ventas() {
             </span>
           )}
         </div>
-        {filasPromedio.length > 0 && (
-          <p className="muted" style={{ marginTop: 0, marginBottom: '0.75rem' }}>
-            Al buscar se actualizan los puntos de reorden (promedio × lead time) para el rango elegido.
-          </p>
-        )}
         {loading && !promedios ? (
           <p>Cargando…</p>
         ) : filasPromedio.length === 0 ? (
@@ -159,6 +167,7 @@ export default function Ventas() {
                 <th>Unidades vendidas</th>
                 <th>Registros</th>
                 <th>Promedio / día</th>
+                <th>Desv. estándar / día</th>
                 <th>Lead time</th>
                 <th>Punto reorden</th>
               </tr>
@@ -170,14 +179,17 @@ export default function Ventas() {
                   <tr key={p.producto_id}>
                     <td>{p.producto_sku}</td>
                     <td>{p.producto_nombre}</td>
-                    <td>{p.unidades_vendidas}</td>
+                    <td>{formato2(p.unidades_vendidas)}</td>
                     <td>{p.registros_venta}</td>
                     <td>
-                      <strong>{p.promedio_unidades_por_dia}</strong>
+                      <strong>{formato2(p.promedio_unidades_por_dia)}</strong>
+                    </td>
+                    <td>
+                      <strong>{formato2(desviacionPorProducto.get(p.producto_id))}</strong>
                     </td>
                     <td>{guardado?.dias_lead_time ?? '—'}</td>
                     <td>
-                      <strong>{guardado?.punto_reorden ?? '—'}</strong>
+                      <strong>{formato2(guardado?.punto_reorden)}</strong>
                     </td>
                   </tr>
                 )
@@ -220,10 +232,10 @@ export default function Ventas() {
                   <td>{v.producto_sku}</td>
                   <td>{v.producto_nombre}</td>
                   <td>{v.categoria_nombre ?? '—'}</td>
-                  <td>{v.cantidad}</td>
-                  <td>{Number(v.precio_unitario).toFixed(2)}</td>
+                  <td>{formato2(v.cantidad)}</td>
+                  <td>{formato2(v.precio_unitario)}</td>
                   <td>
-                    <strong>{v.total != null ? Number(v.total).toFixed(2) : '—'}</strong>
+                    <strong>{formato2(v.total)}</strong>
                   </td>
                 </tr>
               ))}

@@ -30,6 +30,7 @@ router.put("/productos/:id", asyncHandler(productoController.update));
 router.delete("/productos/:id", asyncHandler(productoController.remove));
 
 router.get("/ventas/promedio-diario", asyncHandler(ventaController.promedioDiarioPorProducto));
+router.get("/ventas/desviacion-estandar", asyncHandler(ventaController.desviacionEstandarPorProducto));
 router.get("/ventas", asyncHandler(ventaController.historialPorRango));
 
 router.get("/punto-reorden", asyncHandler(puntoReordenController.listar));

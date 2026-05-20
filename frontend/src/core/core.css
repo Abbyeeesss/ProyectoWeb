@@ -1,4 +1,3 @@
-/* Core — órdenes sugeridas (wireframes) */
 .core-app {
   min-height: 100vh;
   display: grid;
@@ -85,7 +84,6 @@
   width: 100%;
 }
 
-/* Páginas CRUD (productos, proveedores, categorías) dentro del shell core */
 .core-content .page {
   max-width: none;
 }

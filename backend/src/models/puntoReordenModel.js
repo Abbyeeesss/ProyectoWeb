@@ -1,6 +1,7 @@
 import { supabase } from "../db/supabase.js";
 import {
   calcularPromedioUnidadesVendidasPorDiaPorProducto,
+  redondear2,
 } from "./ventaModel.js";
 
 function throwPg(error) {
@@ -20,21 +21,17 @@ function flattenPunto(row) {
     desde: row.desde,
     hasta: row.hasta,
     dias_calendario: row.dias_calendario,
-    unidades_vendidas: row.unidades_vendidas,
-    promedio_unidades_dia: row.promedio_unidades_dia,
+    unidades_vendidas: redondear2(row.unidades_vendidas),
+    promedio_unidades_dia: redondear2(row.promedio_unidades_dia),
     dias_lead_time: row.dias_lead_time,
-    punto_reorden: row.punto_reorden,
+    punto_reorden: redondear2(row.punto_reorden),
     calculado_en: row.calculado_en,
     producto_sku: row.producto?.sku ?? null,
     producto_nombre: row.producto?.nombre ?? null,
-    stock_actual: row.producto?.stock_actual ?? null,
+    stock_actual: redondear2(row.producto?.stock_actual),
   };
 }
 
-/**
- * Calcula promedios del rango y guarda/actualiza un registro por producto en punto_reorden.
- * punto_reorden = promedio_unidades_dia × dias_lead_time del producto.
- */
 export async function guardarPuntosReordenDesdeVentas({ desde, hasta, producto_id }) {
   const { dias_calendario, productos } = await calcularPromedioUnidadesVendidasPorDiaPorProducto({
     desde,
@@ -59,14 +56,14 @@ export async function guardarPuntosReordenDesdeVentas({ desde, hasta, producto_i
   const filas = productos.map((p) => {
     const dias_lead_time = leadPorId.get(p.producto_id) ?? 7;
     const promedio = p.promedio_unidades_por_dia;
-    const punto_reorden = Number((promedio * dias_lead_time).toFixed(4));
+    const punto_reorden = redondear2(promedio * dias_lead_time);
     return {
       producto_id: p.producto_id,
       desde,
       hasta,
       dias_calendario,
-      unidades_vendidas: p.unidades_vendidas,
-      promedio_unidades_dia: promedio,
+      unidades_vendidas: redondear2(p.unidades_vendidas),
+      promedio_unidades_dia: redondear2(promedio),
       dias_lead_time,
       punto_reorden,
       calculado_en,
