@@ -42,6 +42,8 @@ create table if not exists producto (
   proveedor_id     bigint not null references proveedor(id),
   categoria_id     bigint not null references categoria(id),
   precio_referencia numeric(12, 4) not null default 0,
+  tipo              text not null default 'no_perecedero'
+                    check (tipo in ('perecedero', 'no_perecedero')),
   es_perecedero    boolean not null default false,
   stock_actual     numeric(12, 4) not null default 0,
   dias_lead_time   integer not null default 7

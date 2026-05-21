@@ -6,6 +6,7 @@ import * as proveedorController from "../controllers/proveedorController.js";
 import * as productoController from "../controllers/productoController.js";
 import * as ventaController from "../controllers/ventaController.js";
 import * as puntoReordenController from "../controllers/puntoReordenController.js";
+import * as ordenController from "../controllers/ordenController.js";
 
 const router = Router();
 
@@ -38,5 +39,7 @@ router.get("/punto-reorden/comparacion-stock", asyncHandler(puntoReordenControll
 router.get("/punto-reorden/reponer-por-proveedor", asyncHandler(puntoReordenController.reponerPorProveedor));
 router.get("/punto-reorden", asyncHandler(puntoReordenController.listar));
 router.post("/punto-reorden/guardar", asyncHandler(puntoReordenController.guardar));
+
+router.post("/ordenes/generar", asyncHandler(ordenController.generar));
 
 export default router;

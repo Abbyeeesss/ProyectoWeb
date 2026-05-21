@@ -1,6 +1,7 @@
 import * as productoModel from "../models/productoModel.js";
 import * as proveedorModel from "../models/proveedorModel.js";
 import * as categoriaModel from "../models/categoriaModel.js";
+import { tipoParaPersistencia } from "../utils/tipoProducto.js";
 
 async function validarProducto(body) {
   const errores = [];
@@ -29,7 +30,7 @@ async function validarProducto(body) {
       proveedor_id,
       categoria_id,
       precio_referencia: body.precio_referencia,
-      es_perecedero: Boolean(body.es_perecedero),
+      ...tipoParaPersistencia(body),
       stock_actual: body.stock_actual,
       dias_lead_time: body.dias_lead_time,
     },
@@ -74,6 +75,16 @@ export async function remove(req, res) {
   const id = Number(req.params.id);
   const actual = await productoModel.obtenerProducto(id);
   if (!actual) return res.status(404).json({ error: "Producto no encontrado." });
-  await productoModel.eliminarProducto(id);
-  res.status(204).send();
+  try {
+    await productoModel.eliminarProducto(id);
+    res.status(204).send();
+  } catch (e) {
+    if (e.code === "23503") {
+      return res.status(409).json({
+        error:
+          "No se puede eliminar el producto porque tiene registros relacionados. Elimine primero las ventas u otros datos vinculados.",
+      });
+    }
+    throw e;
+  }
 }

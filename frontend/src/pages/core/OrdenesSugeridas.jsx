@@ -11,7 +11,8 @@ function fechaHoy() {
 }
 
 export default function OrdenesSugeridas() {
-  const [proveedores, setProveedores] = useState([])
+  const [ordenes, setOrdenes] = useState([])
+  const [resumen, setResumen] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -20,15 +21,17 @@ export default function OrdenesSugeridas() {
     async function cargar() {
       setLoading(true)
       try {
-        const data = await api.getReponerPorProveedor()
+        const data = await api.postGenerarOrdenes()
         if (!cancelado) {
-          setProveedores(data.proveedores ?? [])
+          setOrdenes(data.ordenes ?? [])
+          setResumen(data)
           setError('')
         }
       } catch (e) {
         if (!cancelado) {
           setError(e.message)
-          setProveedores([])
+          setOrdenes([])
+          setResumen(null)
         }
       } finally {
         if (!cancelado) setLoading(false)
@@ -40,19 +43,25 @@ export default function OrdenesSugeridas() {
     }
   }, [])
 
-  const fecha = fechaHoy()
+  function formatearFecha(iso) {
+    if (!iso) return fechaHoy()
+    return new Date(`${iso}T12:00:00`).toLocaleDateString('es-EC', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })
+  }
 
   return (
     <>
       <div className="core-topbar">
         <div>
           <h2>Órdenes sugeridas</h2>
-          {!loading && !error && (
+          {!loading && !error && resumen && (
             <p className="core-muted">
-              {proveedores.length} proveedor{proveedores.length === 1 ? '' : 'es'} ·{' '}
-              {proveedores.reduce((n, p) => n + p.cantidad_productos, 0)} producto
-              {proveedores.reduce((n, p) => n + p.cantidad_productos, 0) === 1 ? '' : 's'} a
-              reponer
+              {resumen.total_ordenes} orden{resumen.total_ordenes === 1 ? '' : 'es'} ·{' '}
+              {resumen.total_lineas} línea{resumen.total_lineas === 1 ? '' : 's'} ·{' '}
+              {resumen.total_unidades} u. a pedir
             </p>
           )}
         </div>
@@ -73,22 +82,27 @@ export default function OrdenesSugeridas() {
 
           <div className="core-list">
             {loading && <p className="core-muted">Cargando…</p>}
-            {!loading && proveedores.length === 0 && (
+            {!loading && ordenes.length === 0 && !error && (
               <p className="core-muted">No hay órdenes sugeridas. Ningún producto está en o bajo el punto de reorden.</p>
             )}
             {!loading &&
-              proveedores.map((orden) => (
+              ordenes.map((orden) => (
                 <div key={orden.proveedor_id} className="core-order-card">
                   <div className="left">
                     <div className="top">
                       <strong>{orden.proveedor_nombre ?? `Proveedor #${orden.proveedor_id}`}</strong>
-                      <span className="core-badge orange">Sugerida</span>
+                      <span className="core-badge orange">{orden.estado ?? 'Sugerida'}</span>
+                      {orden.frecuencia_reposicion === 'alta' ? (
+                        <span className="core-badge red">Reposición alta</span>
+                      ) : (
+                        <span className="core-badge green">Reposición baja</span>
+                      )}
                     </div>
                     <div className="meta">
                       <span>
-                        Productos: {orden.cantidad_productos}
+                        Productos: {orden.cantidad_productos} · Unidades: {orden.total_unidades}
                       </span>
-                      <span>Fecha: {fecha}</span>
+                      <span>Fecha: {formatearFecha(orden.fecha)}</span>
                     </div>
                   </div>
                   <div className="right">

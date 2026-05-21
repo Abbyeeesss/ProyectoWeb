@@ -79,6 +79,10 @@ export const api = {
     const q = producto_id != null && producto_id !== '' ? `?producto_id=${encodeURIComponent(producto_id)}` : ''
     return request(`/punto-reorden/reponer-por-proveedor${q}`)
   },
+  postGenerarOrdenes: (producto_id) => {
+    const body = producto_id != null && producto_id !== '' ? { producto_id } : {}
+    return request('/ordenes/generar', { method: 'POST', body: JSON.stringify(body) })
+  },
   guardarPuntosReorden: ({ desde, hasta, producto_id }) => {
     const q = new URLSearchParams({ desde, hasta })
     if (producto_id != null && producto_id !== '') {

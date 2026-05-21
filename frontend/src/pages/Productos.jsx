@@ -9,7 +9,7 @@ const empty = {
   precio_referencia: '',
   stock_actual: '',
   dias_lead_time: '7',
-  es_perecedero: false,
+  tipo: 'no_perecedero',
 }
 
 export default function Productos() {
@@ -58,7 +58,7 @@ export default function Productos() {
       precio_referencia: row.precio_referencia,
       stock_actual: row.stock_actual,
       dias_lead_time: row.dias_lead_time,
-      es_perecedero: Boolean(row.es_perecedero),
+      tipo: row.tipo ?? (row.es_perecedero ? 'perecedero' : 'no_perecedero'),
     })
   }
 
@@ -78,7 +78,7 @@ export default function Productos() {
       precio_referencia: form.precio_referencia,
       stock_actual: form.stock_actual,
       dias_lead_time: form.dias_lead_time,
-      es_perecedero: form.es_perecedero,
+      tipo: form.tipo,
     }
     try {
       if (editId) await api.putProducto(editId, body)
@@ -183,13 +183,12 @@ export default function Productos() {
             />
           </label>
         </div>
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={form.es_perecedero}
-            onChange={(e) => setField('es_perecedero', e.target.checked)}
-          />
-          Producto perecedero (prioriza pedidos más frecuentes en el core)
+        <label className="field">
+          <span>Tipo</span>
+          <select value={form.tipo} onChange={(e) => setField('tipo', e.target.value)}>
+            <option value="no_perecedero">No perecedero</option>
+            <option value="perecedero">Perecedero</option>
+          </select>
         </label>
         <div className="actions">
           <button type="submit">Guardar</button>
@@ -215,7 +214,7 @@ export default function Productos() {
                 <th>Categoría</th>
                 <th>Stock</th>
                 <th>Lead</th>
-                <th>Perecedero</th>
+                <th>Tipo</th>
                 <th />
               </tr>
             </thead>
@@ -228,7 +227,7 @@ export default function Productos() {
                   <td>{r.categoria_nombre}</td>
                   <td>{r.stock_actual}</td>
                   <td>{r.dias_lead_time}</td>
-                  <td>{r.es_perecedero ? 'Sí' : 'No'}</td>
+                  <td>{r.tipo_etiqueta ?? (r.tipo === 'perecedero' ? 'Perecedero' : 'No perecedero')}</td>
                   <td className="row-actions">
                     <button type="button" className="linkish" onClick={() => editar(r)}>
                       Editar
