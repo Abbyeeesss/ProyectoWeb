@@ -94,10 +94,10 @@ export async function listarPuntosReorden() {
   return (data ?? []).map(flattenPunto);
 }
 
-export async function compararStockActualVsPuntoReordenPorProducto({ producto_id } = {}) {
+export async function listarProductosAReponer({ producto_id } = {}) {
   let queryProductos = supabase
     .from("producto")
-    .select("id, sku, nombre, stock_actual, proveedor(nombre_comercial)")
+    .select("id, sku, nombre, stock_actual, proveedor_id, proveedor(nombre_comercial)")
     .order("nombre");
 
   if (producto_id != null) {
@@ -128,6 +128,7 @@ export async function compararStockActualVsPuntoReordenPorProducto({ producto_id
       producto_id: prod.id,
       sku: prod.sku,
       nombre: prod.nombre,
+      proveedor_id: prod.proveedor_id,
       proveedor_nombre: prod.proveedor?.nombre_comercial ?? null,
       stock_actual,
       punto_reorden,
@@ -139,9 +140,52 @@ export async function compararStockActualVsPuntoReordenPorProducto({ producto_id
   }
 
   alertas.sort((a, b) => a.diferencia - b.diferencia);
+  return alertas;
+}
 
+export async function compararStockActualVsPuntoReordenPorProducto({ producto_id } = {}) {
+  const alertas = await listarProductosAReponer({ producto_id });
   return {
     total: alertas.length,
     productos: alertas,
+  };
+}
+
+export async function agruparProductosAReponerPorProveedor({ producto_id } = {}) {
+  const alertas = await listarProductosAReponer({ producto_id });
+  const porProveedor = new Map();
+
+  for (const producto of alertas) {
+    const proveedorId = producto.proveedor_id;
+    if (!porProveedor.has(proveedorId)) {
+      porProveedor.set(proveedorId, []);
+    }
+    porProveedor.get(proveedorId).push(producto);
+  }
+
+  return porProveedor;
+}
+
+export function serializarReponerPorProveedorMap(porProveedor) {
+  const proveedores = [...porProveedor.entries()]
+    .map(([proveedor_id, productos]) => ({
+      proveedor_id,
+      proveedor_nombre: productos[0]?.proveedor_nombre ?? null,
+      cantidad_productos: productos.length,
+      productos,
+    }))
+    .sort((a, b) => {
+      if (b.cantidad_productos !== a.cantidad_productos) {
+        return b.cantidad_productos - a.cantidad_productos;
+      }
+      return String(a.proveedor_nombre ?? "").localeCompare(String(b.proveedor_nombre ?? ""), "es");
+    });
+
+  const total_productos = proveedores.reduce((n, p) => n + p.cantidad_productos, 0);
+
+  return {
+    total_productos,
+    total_proveedores: proveedores.length,
+    proveedores,
   };
 }

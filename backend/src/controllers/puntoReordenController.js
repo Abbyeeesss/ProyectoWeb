@@ -49,3 +49,20 @@ export async function compararStock(req, res) {
 
   res.json(await puntoReordenModel.compararStockActualVsPuntoReordenPorProducto({ producto_id }));
 }
+
+export async function reponerPorProveedor(req, res) {
+  let producto_id;
+  if (req.query.producto_id != null && req.query.producto_id !== "") {
+    producto_id = Number(req.query.producto_id);
+    if (!producto_id || producto_id < 1) {
+      return res.status(400).json({ error: "producto_id debe ser un entero positivo." });
+    }
+  }
+
+  if (producto_id && !(await productoModel.obtenerProducto(producto_id))) {
+    return res.status(404).json({ error: "Producto no encontrado." });
+  }
+
+  const mapa = await puntoReordenModel.agruparProductosAReponerPorProveedor({ producto_id });
+  res.json(puntoReordenModel.serializarReponerPorProveedorMap(mapa));
+}

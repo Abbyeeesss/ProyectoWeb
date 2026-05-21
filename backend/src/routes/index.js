@@ -35,6 +35,7 @@ router.get("/ventas/desviacion-estandar", asyncHandler(ventaController.desviacio
 router.get("/ventas", asyncHandler(ventaController.historialPorRango));
 
 router.get("/punto-reorden/comparacion-stock", asyncHandler(puntoReordenController.compararStock));
+router.get("/punto-reorden/reponer-por-proveedor", asyncHandler(puntoReordenController.reponerPorProveedor));
 router.get("/punto-reorden", asyncHandler(puntoReordenController.listar));
 router.post("/punto-reorden/guardar", asyncHandler(puntoReordenController.guardar));
 

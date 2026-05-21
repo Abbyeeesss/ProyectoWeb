@@ -75,6 +75,10 @@ export const api = {
     const q = producto_id != null && producto_id !== '' ? `?producto_id=${encodeURIComponent(producto_id)}` : ''
     return request(`/punto-reorden/comparacion-stock${q}`)
   },
+  getReponerPorProveedor: (producto_id) => {
+    const q = producto_id != null && producto_id !== '' ? `?producto_id=${encodeURIComponent(producto_id)}` : ''
+    return request(`/punto-reorden/reponer-por-proveedor${q}`)
+  },
   guardarPuntosReorden: ({ desde, hasta, producto_id }) => {
     const q = new URLSearchParams({ desde, hasta })
     if (producto_id != null && producto_id !== '') {
